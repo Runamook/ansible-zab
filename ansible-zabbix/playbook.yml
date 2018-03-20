@@ -1,0 +1,140 @@
+---
+- hosts: zabbix
+  become: true
+  become_user: root
+
+  tasks:
+
+  # Zabbix repository
+  - name: Add Zabbix repository
+    yum_repository:
+      name: zabbix
+      description: zabbix
+      baseurl: http://repo.zabbix.com/zabbix/3.4/rhel/7/$basearch/
+      gpgcheck: 0
+
+  - name: Add Zabbix-non-supported repository
+    yum_repository:
+      name: zabbix-non-supported
+      description: zabbix-non-supported
+      baseurl: http://repo.zabbix.com/non-supported/rhel/7/$basearch/
+      gpgcheck: 0
+
+  # EPEL repository
+  - name: Install EPEL repository
+    yum: "name=epel-release state=installed"
+
+  # Other packages
+  - name: Install YUM packages
+    yum: "name={{ item }} state=installed"
+    with_items:
+      - zabbix-server-mysql
+      - tcpdump
+      - httpd
+      - bind-utils
+      - zabbix-web-mysql
+      - mariadb-server
+      - MySQL-python
+      - net-snmp
+
+  # Set timezone
+  - name: set timezone to Europe/Moscow
+    timezone:
+      name: Europe/Moscow
+
+  # Disable SELINUX
+  - name: Disable SELINUX
+    selinux:
+      policy: targeted
+      state: permissive
+
+  # Copy files
+  - name: Copy bashrc
+    copy:
+      src: bashrc
+      dest: /home/vagrant/.bashrc
+      owner: vagrant
+      group: vagrant
+      mode: 0644
+
+  - name: Copy zabbix_server.cfg
+    copy:
+      src: zabbix_server.conf
+      dest: /etc/zabbix/zabbix_server.conf
+      owner: root
+      group: zabbix
+      mode: 0640
+
+  - name: Copy zabbix_trap_receiver.pl
+    copy:
+      src: zabbix_trap_receiver.pl
+      dest: /usr/local/bin/zabbix_trap_receiver.pl
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: Copy logrotate zabbix_traps
+    copy:
+      src: zabbix_traps
+      dest: /etc/logrotate.d/zabbix_traps
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Copy snmptrapd
+    copy:
+      src: snmptrapd.conf
+      dest: /etc/snmp/snmptrapd.conf
+      owner: root
+      group: root
+      mode: 0600
+
+  - name: Start snmptrapd
+    service:
+      name: snmptrapd
+      state: started
+      enabled: true
+
+  - name: Start httpd
+    service:
+      name: httpd
+      state: started
+      enabled: true
+
+  - name: Start mariadb-server
+    service:
+      name: mariadb
+      state: started
+      enabled: true
+
+  - name: Create a new database with name 'zabbix'
+    mysql_db:
+      name: zabbix
+      state: present
+    register: db_created
+
+  - name: Create MySQL zabbix user
+    mysql_user:
+      name: zabbix
+      password: zabbix
+      priv: 'zabbix.*:ALL'
+      state: present
+
+  - name: Import create.sql.gz 
+    mysql_db:
+      state: import
+      name: zabbix
+      login_user: zabbix
+      login_password: zabbix
+      login_host: localhost
+      target: /usr/share/doc/zabbix-server-mysql-3.4.7/create.sql.gz
+    when: db_created.changed
+
+  - name: Start zabbix-rerver
+    service:
+      name: zabbix-server
+      state: started
+      enabled: true
+
+
+...
