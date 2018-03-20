@@ -42,6 +42,9 @@
     timezone:
       name: Europe/Moscow
 
+  - name: set timezone to Europe/Moscow in PHP
+    shell: sed -i 's|# php_value date.timezone Europe/Riga|php_value date.timezone Europe/Moscow|g' /etc/httpd/conf.d/zabbix.conf
+
   # Disable SELINUX
   - name: Disable SELINUX
     selinux:
