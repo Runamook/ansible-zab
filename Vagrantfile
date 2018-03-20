@@ -67,7 +67,7 @@ Vagrant.configure("2") do |config|
    config.vm.provision "shell", inline: <<-SHELL
 		 sudo sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
 		 sudo systemctl restart sshd
-     yum update
+     yum update -y
      yum install -y git curl vim
    SHELL
 end

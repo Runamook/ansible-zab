@@ -29,6 +29,7 @@
     yum: "name={{ item }} state=installed"
     with_items:
       - zabbix-server-mysql
+      - zabbix-agent
       - tcpdump
       - httpd
       - bind-utils
@@ -92,6 +93,16 @@
       group: root
       mode: 0600
 
+  # Create trap logfile
+  - name: ensure file zabbix_traps.tmp exists
+  copy:
+    content: ""
+    dest: /tmp/zabbix_traps.tmp
+    force: no
+    group: zabbix
+    owner: zabbix
+    mode: 0644
+
   - name: Start snmptrapd
     service:
       name: snmptrapd
@@ -133,9 +144,15 @@
       target: /usr/share/doc/zabbix-server-mysql-3.4.7/create.sql.gz
     when: db_created.changed
 
-  - name: Start zabbix-rerver
+  - name: Start zabbix-server
     service:
       name: zabbix-server
+      state: started
+      enabled: true
+
+  - name: Start zabbix-agent
+    service:
+      name: zabbix-agent
       state: started
       enabled: true
 
