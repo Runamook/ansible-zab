@@ -95,13 +95,13 @@
 
   # Create trap logfile
   - name: ensure file zabbix_traps.tmp exists
-  copy:
-    content: ""
-    dest: /tmp/zabbix_traps.tmp
-    force: no
-    group: zabbix
-    owner: zabbix
-    mode: 0644
+    copy:
+      content: ""
+      dest: /tmp/zabbix_traps.tmp
+      force: "no"
+      group: zabbix
+      owner: zabbix
+      mode: 0644
 
   - name: Start snmptrapd
     service:
@@ -134,7 +134,7 @@
       priv: 'zabbix.*:ALL'
       state: present
 
-  - name: Import create.sql.gz 
+  - name: Import create.sql.gz
     mysql_db:
       state: import
       name: zabbix
