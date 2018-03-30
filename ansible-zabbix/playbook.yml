@@ -44,7 +44,12 @@
       name: Europe/Moscow
 
   - name: set timezone to Europe/Moscow in PHP
-    shell: sed -i 's|# php_value date.timezone Europe/Riga|php_value date.timezone Europe/Moscow|g' /etc/httpd/conf.d/zabbix.conf
+    shell: sed -i 's|# php_value date.timezone.* |php_value date.timezone Europe/Moscow|g' /etc/httpd/conf.d/zabbix.conf
+    #  lineinfile:
+    #  path: /etc/httpd/conf.d/zabbix.conf
+    #  regexp: '# php_value date.timezone'
+    #  insertafter: 'php_value date.timezone Europe/Moscow'
+    #  state: present
 
   # Disable SELINUX
   - name: Disable SELINUX
@@ -143,6 +148,23 @@
       login_host: localhost
       target: /usr/share/doc/zabbix-server-mysql-3.4.7/create.sql.gz
     when: db_created.changed
+
+  - name: delete anonymous MySQL server user
+    mysql_user:
+      login_user: root
+      check_implicit_admin: "yes"
+      user: ""
+      host: "{{ item }}"
+      state: "absent"
+    with_items:
+      - ""
+      - localhost
+
+  - name: remove the MySQL test database
+    mysql_db:
+      login_user: root
+      db: test
+      state: absent
 
   - name: Start zabbix-server
     service:
